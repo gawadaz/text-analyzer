@@ -1,0 +1,42 @@
+.uploadCard {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.dropzone {
+  border: 2px dashed #dbe2ef;
+  border-radius: 16px;
+  padding: 44px 20px;
+  text-align: center;
+  position: relative;
+}
+
+.dropIcon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #e8f0ff;
+  color: #2563eb;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+}
+
+.dropTitle {
+  margin: 0;
+  font-weight: 600;
+}
+
+.dropSubtitle {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.dropInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}

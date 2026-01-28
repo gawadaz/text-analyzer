@@ -46,3 +46,12 @@ vitest.config.*.timestamp*
 
 docs
 test-files
+
+
+## add terraform related ignores below
+*.tfstate
+*.tfstate.backup
+**/.terraform/
+crash.log
+override.tf
+.terraform.lock.hcl

@@ -1,0 +1,75 @@
+.page {
+  min-height: 100vh;
+  background: #f5f7fb;
+  color: #111827;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid #e6eaf2;
+}
+
+.menuButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #374151;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.menuButton:hover {
+  background: #f3f4f6;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.brandIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+}
+
+.brandText {
+  font-size: 18px;
+}
+
+.container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 32px 28px 48px;
+}
+
+.hero {
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
