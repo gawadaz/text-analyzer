@@ -3,15 +3,15 @@ import styles from './uploadFile.module.css';
 
 type UploadFileProps = {
   acceptedFormats?: string[];
-  onUpload: (file: File) => void;
-  onUploadError: (error: Error) => void;
+  onSelect: (file: File) => void;
+  onSelectError: (error: Error) => void;
   isBusy?: boolean;
 };
 
 export function UploadFile({
   acceptedFormats = ['.txt'],
-  onUpload,
-  onUploadError,
+  onSelect,
+  onSelectError,
   isBusy = false,
 }: UploadFileProps) {
   const formats = acceptedFormats.join(', ');
@@ -22,11 +22,12 @@ export function UploadFile({
       // validate file extension
       const file = e.target.files[0];
       if (!acceptedFormats || acceptedFormats.some(format => file.name.endsWith(format))) {
-        onUpload(file);
+        onSelect(file);
       } else {
-        onUploadError(new Error('Invalid file format'));
+        onSelectError(new Error('Invalid file format'));
       }      
     } 
+    e.target.value = '';
   };
   
   return (

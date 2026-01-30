@@ -18,6 +18,7 @@ export type FileMetadataItemInput = {
   s3Bucket: string;
   s3Key: string;
   originalFileName: string;
+  fingerprintHash: string;
 };
 
 export type AnalysisResult = {
@@ -33,6 +34,7 @@ export type OwnerHistoryItem = {
   s3Bucket: string;
   s3Key: string;
   originalFileName: string;
+  fingerprintHash?: string;
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
   createdAt: number;
   updatedAt: number;
@@ -74,11 +76,13 @@ export const putFileMetadataItem = async (input: FileMetadataItemInput): Promise
         s3Bucket: { S: input.s3Bucket },
         s3Key: { S: input.s3Key },
         originalFileName: { S: input.originalFileName },
+        fingerprintHash: { S: input.fingerprintHash },
 
         status: { S: "PENDING" },
         createdAt: { N: String(now) },
         updatedAt: { N: String(now) }
-      }
+      },
+      ConditionExpression: "attribute_not_exists(PK)"
     })
   );
 
@@ -95,6 +99,7 @@ export const putFileMetadataItem = async (input: FileMetadataItemInput): Promise
         s3Bucket: { S: input.s3Bucket },
         s3Key: { S: input.s3Key },
         originalFileName: { S: input.originalFileName },
+        fingerprintHash: { S: input.fingerprintHash },
 
         status: { S: "PENDING" },
         createdAt: { N: String(now) },
@@ -212,6 +217,7 @@ export const listOwnerHistoryItems = async (ownerId: string): Promise<OwnerHisto
       const s3Bucket = getString(item.s3Bucket as { S?: string } | undefined);
       const s3Key = getString(item.s3Key as { S?: string } | undefined);
       const originalFileName = getString(item.originalFileName as { S?: string } | undefined);
+      const fingerprintHash = getString(item.fingerprintHash as { S?: string } | undefined);
       const status = getString(item.status as { S?: string } | undefined);
       const createdAt = getNumber(item.createdAt as { N?: string } | undefined);
       const updatedAt = getNumber(item.updatedAt as { N?: string } | undefined);
@@ -220,7 +226,7 @@ export const listOwnerHistoryItems = async (ownerId: string): Promise<OwnerHisto
         return undefined;
       }
 
-      return {
+      const baseItem: OwnerHistoryItem = {
         fileId,
         ownerId: ownerIdValue,
         s3Bucket,
@@ -230,6 +236,12 @@ export const listOwnerHistoryItems = async (ownerId: string): Promise<OwnerHisto
         createdAt,
         updatedAt
       };
+
+      if (fingerprintHash) {
+        baseItem.fingerprintHash = fingerprintHash;
+      }
+
+      return baseItem;
     })
     .filter((item): item is OwnerHistoryItem => Boolean(item));
 };
