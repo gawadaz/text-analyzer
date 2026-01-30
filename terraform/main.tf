@@ -14,6 +14,12 @@ provider "aws" {
 	profile = var.aws_profile
 }
 
+locals {
+	cloudfront_origin        = "https://${module.cloudfront.distribution_domain_name}"
+	api_cors_allow_origins   = distinct(compact(concat(var.api_cors_allow_origins, [local.cloudfront_origin])))
+	uploads_cors_allow_origins = distinct(compact(concat(var.uploads_cors_allow_origins, [local.cloudfront_origin])))
+}
+
 module "cloudfront" {
 	source = "./modules/cloudfront"
 
@@ -35,7 +41,7 @@ module "s3_uploads" {
 
 	bucket_name       = var.uploads_bucket_name
 	enable_versioning = var.uploads_bucket_enable_versioning
-	cors_allow_origins = var.uploads_cors_allow_origins
+	cors_allow_origins = local.uploads_cors_allow_origins
 	tags              = var.tags
 }
 
@@ -148,7 +154,7 @@ module "apigw_http" {
 			lambda_function_name = module.lambda_analytics_delete.function_name
 		}
 	]
-	cors_allow_origins    = var.api_cors_allow_origins
+	cors_allow_origins    = local.api_cors_allow_origins
 	tags                  = var.tags
 }
 
@@ -196,4 +202,14 @@ data "aws_iam_policy_document" "frontend_cloudfront_read" {
 resource "aws_s3_bucket_policy" "frontend" {
 	bucket = module.s3_frontend.bucket_name
 	policy = data.aws_iam_policy_document.frontend_cloudfront_read.json
+}
+
+resource "aws_s3_object" "frontend_app_config" {
+	bucket        = module.s3_frontend.bucket_name
+	key           = "config.json"
+	content_type  = "application/json"
+	cache_control = "no-store"
+	content       = jsonencode({
+		apiBaseUrl = module.apigw_http.api_endpoint
+	})
 }

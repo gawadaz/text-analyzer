@@ -24,13 +24,11 @@ worker_lambda_handler      = "main.workerHandler"
 worker_lambda_package_path = "../apps/text-analyzer-api/dist/lambda.zip"
 
 api_cors_allow_origins = [
-  "http://localhost:4200",
-  "https://d3q4trucsrrapt.cloudfront.net"
+  "http://localhost:4200"
 ]
 
 uploads_cors_allow_origins = [
-  "http://localhost:4200",
-  "https://d3q4trucsrrapt.cloudfront.net"
+  "http://localhost:4200"
 ]
 
 tags = {

@@ -24,6 +24,6 @@ if [[ -n "$PREFIX" ]]; then
   S3_PATH="$S3_PATH/${PREFIX#/}"
 fi
 
-aws s3 sync "$DIST_DIR" "$S3_PATH" --delete
+aws s3 sync "$DIST_DIR" "$S3_PATH" --delete --exclude "config.json"
 
 echo "Upload complete: $S3_PATH"
