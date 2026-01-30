@@ -133,7 +133,7 @@ Use this folder structure:
 ---
 
 ## 10) Styling rules (use Chakra UI)
-- Use **Chakra UI** components for all new UI work.
+- Prefer **Chakra UI** components for all new UI work.
 - Prefer Chakra style props and theming over custom CSS.
 - Keep styles consistent and reusable.
 - Avoid inline styles except for tiny dynamic cases.

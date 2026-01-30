@@ -5,9 +5,15 @@ type UploadFileProps = {
   acceptedFormats?: string[];
   onUpload: (file: File) => void;
   onUploadError: (error: Error) => void;
+  isBusy?: boolean;
 };
 
-export function UploadFile({ acceptedFormats = ['.txt'], onUpload, onUploadError }: UploadFileProps) {
+export function UploadFile({
+  acceptedFormats = ['.txt'],
+  onUpload,
+  onUploadError,
+  isBusy = false,
+}: UploadFileProps) {
   const formats = acceptedFormats.join(', ');
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,7 +26,7 @@ export function UploadFile({ acceptedFormats = ['.txt'], onUpload, onUploadError
       } else {
         onUploadError(new Error('Invalid file format'));
       }      
-    }
+    } 
   };
   
   return (
@@ -31,7 +37,14 @@ export function UploadFile({ acceptedFormats = ['.txt'], onUpload, onUploadError
         </div>
         <p className={styles.dropTitle}>Drop your {formats} file here</p>
         <p className={styles.dropSubtitle}>or click to browse</p>
-        <input className={styles.dropInput} type="file" accept={formats} onChange={onFileSelect} />
+        <input
+          className={styles.dropInput}
+          type="file"
+          accept={formats}
+          onChange={onFileSelect}
+          disabled={isBusy}
+          aria-busy={isBusy}
+        />
       </div>
     </section>
   );

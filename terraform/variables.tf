@@ -25,3 +25,117 @@ variable "tags" {
 	description = "Tags to apply to resources."
 	default     = {}
 }
+
+variable "uploads_bucket_name" {
+	type        = string
+	description = "S3 bucket name for user uploads."
+}
+
+variable "uploads_bucket_enable_versioning" {
+	type        = bool
+	description = "Whether to enable S3 versioning for the uploads bucket."
+	default     = true
+}
+
+variable "uploads_cors_allow_origins" {
+	type        = list(string)
+	description = "Allowed origins for uploads bucket CORS configuration."
+}
+
+variable "dynamodb_table_name" {
+	type        = string
+	description = "Name of the DynamoDB table used by the API."
+}
+
+variable "dynamodb_hash_key" {
+	type        = string
+	description = "Partition key attribute name for the DynamoDB table."
+}
+
+variable "dynamodb_hash_key_type" {
+	type        = string
+	description = "Partition key attribute type (S, N, B)."
+	default     = "S"
+}
+
+variable "dynamodb_range_key" {
+	type        = string
+	description = "Sort key attribute name for the DynamoDB table (optional)."
+	default     = null
+}
+
+variable "dynamodb_range_key_type" {
+	type        = string
+	description = "Sort key attribute type (S, N, B)."
+	default     = "S"
+}
+
+variable "dynamodb_billing_mode" {
+	type        = string
+	description = "Billing mode for the DynamoDB table."
+	default     = "PAY_PER_REQUEST"
+}
+
+variable "dynamodb_read_capacity" {
+	type        = number
+	description = "Read capacity units (only used if billing_mode is PROVISIONED)."
+	default     = 5
+}
+
+variable "dynamodb_write_capacity" {
+	type        = number
+	description = "Write capacity units (only used if billing_mode is PROVISIONED)."
+	default     = 5
+}
+
+variable "api_lambda_function_name" {
+	type        = string
+	description = "Name of the uploads presign Lambda function."
+	default     = "text-analyzer-uploads-presign"
+}
+
+variable "api_lambda_handler" {
+	type        = string
+	description = "Handler for the uploads presign Lambda function."
+}
+
+variable "api_lambda_runtime" {
+	type        = string
+	description = "Runtime for the uploads presign Lambda function."
+	default     = "nodejs20.x"
+}
+
+variable "api_lambda_package_path" {
+	type        = string
+	description = "Path to the Lambda deployment package zip for uploads presign."
+}
+
+variable "api_lambda_memory_size" {
+	type        = number
+	description = "Memory size for the uploads presign Lambda function."
+	default     = 256
+}
+
+variable "api_lambda_timeout" {
+	type        = number
+	description = "Timeout for the uploads presign Lambda function."
+	default     = 10
+}
+
+variable "api_lambda_log_retention_in_days" {
+	type        = number
+	description = "CloudWatch log retention in days for the uploads presign Lambda function."
+	default     = 14
+}
+
+variable "api_gateway_name" {
+	type        = string
+	description = "Name of the API Gateway HTTP API."
+	default     = "text-analyzer-api"
+}
+
+variable "api_cors_allow_origins" {
+	type        = list(string)
+	description = "Allowed origins for the API Gateway CORS configuration."
+	default     = ["*"]
+}

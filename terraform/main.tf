@@ -30,6 +30,58 @@ module "s3_frontend" {
 	tags                        = var.tags
 }
 
+module "s3_uploads" {
+	source = "./modules/s3_uploads"
+
+	bucket_name       = var.uploads_bucket_name
+	enable_versioning = var.uploads_bucket_enable_versioning
+	cors_allow_origins = var.uploads_cors_allow_origins
+	tags              = var.tags
+}
+
+module "dynamodb" {
+	source = "./modules/dynamodb"
+
+	table_name     = var.dynamodb_table_name
+	hash_key       = var.dynamodb_hash_key
+	hash_key_type  = var.dynamodb_hash_key_type
+	range_key      = var.dynamodb_range_key
+	range_key_type = var.dynamodb_range_key_type
+	billing_mode   = var.dynamodb_billing_mode
+	read_capacity  = var.dynamodb_read_capacity
+	write_capacity = var.dynamodb_write_capacity
+	tags           = var.tags
+}
+
+module "lambda_api" {
+	source = "./modules/lambda_api"
+
+	function_name           = var.api_lambda_function_name
+	description             = "Uploads presign handler"
+	handler                 = var.api_lambda_handler
+	runtime                 = var.api_lambda_runtime
+	package_path            = var.api_lambda_package_path
+	memory_size             = var.api_lambda_memory_size
+	timeout                 = var.api_lambda_timeout
+	log_retention_in_days   = var.api_lambda_log_retention_in_days
+	uploads_bucket_name     = module.s3_uploads.bucket_name
+	dynamodb_table_name     = module.dynamodb.table_name
+	dynamodb_table_arn       = module.dynamodb.table_arn
+	environment_variables = {}
+	tags = var.tags
+}
+
+module "apigw_http" {
+	source = "./modules/apigw_http"
+
+	api_name             = var.api_gateway_name
+	route_key            = "POST /api/v1/uploads/presign"
+	lambda_invoke_arn     = module.lambda_api.invoke_arn
+	lambda_function_name  = module.lambda_api.function_name
+	cors_allow_origins    = var.api_cors_allow_origins
+	tags                  = var.tags
+}
+
 data "aws_iam_policy_document" "frontend_cloudfront_read" {
 	statement {
 		sid     = "AllowCloudFrontRead"
