@@ -128,6 +128,46 @@ variable "api_lambda_log_retention_in_days" {
 	default     = 14
 }
 
+variable "analytics_lambda_function_name" {
+	type        = string
+	description = "Name of the analytics Lambda function."
+	default     = "text-analyzer-analytics"
+}
+
+variable "analytics_lambda_handler" {
+	type        = string
+	description = "Handler for the analytics Lambda function."
+}
+
+variable "analytics_lambda_runtime" {
+	type        = string
+	description = "Runtime for the analytics Lambda function."
+	default     = "nodejs20.x"
+}
+
+variable "analytics_lambda_package_path" {
+	type        = string
+	description = "Path to the Lambda deployment package zip for analytics."
+}
+
+variable "analytics_lambda_memory_size" {
+	type        = number
+	description = "Memory size for the analytics Lambda function."
+	default     = 256
+}
+
+variable "analytics_lambda_timeout" {
+	type        = number
+	description = "Timeout for the analytics Lambda function."
+	default     = 10
+}
+
+variable "analytics_lambda_log_retention_in_days" {
+	type        = number
+	description = "CloudWatch log retention in days for the analytics Lambda function."
+	default     = 14
+}
+
 variable "api_gateway_name" {
 	type        = string
 	description = "Name of the API Gateway HTTP API."

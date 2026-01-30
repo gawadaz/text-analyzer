@@ -38,6 +38,8 @@ export type OwnerHistoryItem = {
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
   createdAt: number;
   updatedAt: number;
+  result?: AnalysisResult;
+  errorMessage?: string;
 };
 
 const toResultAttribute = (result: AnalysisResult): AttributeValue => ({
@@ -174,6 +176,13 @@ export const updateFileMetadataItemStatus = async (
     ownerRemoveExpressions.push("errorMessage");
   }
 
+  if (result) {
+    ownerSetExpressions.push("result = :result");
+    ownerExpressionAttributeValues[":result"] = toResultAttribute(result);
+  } else {
+    ownerRemoveExpressions.push("result");
+  }
+
   const ownerUpdateExpression = `SET ${ownerSetExpressions.join(", ")}${
     ownerRemoveExpressions.length ? ` REMOVE ${ownerRemoveExpressions.join(", ")}` : ""
   }`;
@@ -198,6 +207,46 @@ const getString = (value: { S?: string } | undefined): string | undefined => val
 const getNumber = (value: { N?: string } | undefined): number | undefined =>
   value?.N ? Number(value.N) : undefined;
 
+const getResult = (value: AttributeValue | undefined): AnalysisResult | undefined => {
+  if (!value || !('M' in value) || !value.M) {
+    return undefined;
+  }
+
+  const map = value.M;
+  const totalWords = getNumber(map.totalWords as { N?: string } | undefined);
+  const uniqueWords = getNumber(map.uniqueWords as { N?: string } | undefined);
+  const avgWordLength = getNumber(map.avgWordLength as { N?: string } | undefined);
+
+  if (totalWords === undefined || uniqueWords === undefined || avgWordLength === undefined) {
+    return undefined;
+  }
+
+  const top10WordsValue = map.top10Words as AttributeValue | undefined;
+  const top10Words =
+    top10WordsValue && 'L' in top10WordsValue && top10WordsValue.L
+      ? top10WordsValue.L
+          .map((entry) => {
+            if (!entry || !('M' in entry) || !entry.M) {
+              return undefined;
+            }
+            const word = getString(entry.M.word as { S?: string } | undefined);
+            const count = getNumber(entry.M.count as { N?: string } | undefined);
+            if (!word || count === undefined) {
+              return undefined;
+            }
+            return { word, count };
+          })
+          .filter((entry): entry is { word: string; count: number } => Boolean(entry))
+      : undefined;
+
+  return {
+    totalWords,
+    uniqueWords,
+    avgWordLength,
+    ...(top10Words ? { top10Words } : {})
+  };
+};
+
 export const listOwnerHistoryItems = async (ownerId: string): Promise<OwnerHistoryItem[]> => {
   const result = await ddbClient.send(
     new QueryCommand({
@@ -221,6 +270,8 @@ export const listOwnerHistoryItems = async (ownerId: string): Promise<OwnerHisto
       const status = getString(item.status as { S?: string } | undefined);
       const createdAt = getNumber(item.createdAt as { N?: string } | undefined);
       const updatedAt = getNumber(item.updatedAt as { N?: string } | undefined);
+      const errorMessage = getString(item.errorMessage as { S?: string } | undefined);
+      const result = getResult(item.result as AttributeValue | undefined);
 
       if (!fileId || !ownerIdValue || !s3Bucket || !s3Key || !originalFileName || !status || !createdAt || !updatedAt) {
         return undefined;
@@ -239,6 +290,14 @@ export const listOwnerHistoryItems = async (ownerId: string): Promise<OwnerHisto
 
       if (fingerprintHash) {
         baseItem.fingerprintHash = fingerprintHash;
+      }
+
+      if (errorMessage) {
+        baseItem.errorMessage = errorMessage;
+      }
+
+      if (result) {
+        baseItem.result = result;
       }
 
       return baseItem;

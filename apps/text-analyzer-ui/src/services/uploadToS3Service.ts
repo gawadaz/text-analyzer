@@ -3,18 +3,7 @@ import axiosClient from '../axiosClient';
 import { PresignRequest, PresignResponse } from '../types/uploadTypes';
 import { createFileFingerprintHash } from '../utils/hashFingerprint';
 import { cacheFingerprint, isFingerprintCached } from './uploadFingerprintCache';
-
-function getOrCreateOwnerId(): string {
-  const key = "text-analyzer-owner-id";
-  let ownerId = localStorage.getItem(key);
-
-  if (!ownerId) {
-    ownerId = `anon_${crypto.randomUUID()}`;
-    localStorage.setItem(key, ownerId);
-  }
-
-  return ownerId;
-}
+import { getOrCreateOwnerId } from './ownerIdService';
 
 const presignFileUpload = async (
   fileName: string,
@@ -29,7 +18,7 @@ const presignFileUpload = async (
       ownerId,
       fingerprintHash,
     };
-    const response = await axiosClient.post('/uploads/presign', payload);
+    const response = await axiosClient.post('/api/v1/uploads/presign', payload);
     if (response.status !== 200) {
       throw new Error(`Failed to get presigned URL: ${response.statusText}`);
     }

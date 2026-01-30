@@ -71,13 +71,40 @@ module "lambda_api" {
 	tags = var.tags
 }
 
+module "lambda_analytics" {
+	source = "./modules/lambda_api"
+
+	function_name           = var.analytics_lambda_function_name
+	description             = "Owner analytics handler"
+	handler                 = var.analytics_lambda_handler
+	runtime                 = var.analytics_lambda_runtime
+	package_path            = var.analytics_lambda_package_path
+	memory_size             = var.analytics_lambda_memory_size
+	timeout                 = var.analytics_lambda_timeout
+	log_retention_in_days   = var.analytics_lambda_log_retention_in_days
+	uploads_bucket_name     = module.s3_uploads.bucket_name
+	dynamodb_table_name     = module.dynamodb.table_name
+	dynamodb_table_arn       = module.dynamodb.table_arn
+	environment_variables = {}
+	tags = var.tags
+}
+
 module "apigw_http" {
 	source = "./modules/apigw_http"
 
 	api_name             = var.api_gateway_name
-	route_key            = "POST /api/v1/uploads/presign"
-	lambda_invoke_arn     = module.lambda_api.invoke_arn
-	lambda_function_name  = module.lambda_api.function_name
+	routes               = [
+		{
+			route_key            = "POST /api/v1/uploads/presign"
+			lambda_invoke_arn    = module.lambda_api.invoke_arn
+			lambda_function_name = module.lambda_api.function_name
+		},
+		{
+			route_key            = "GET /api/v1/analytics/{ownerId}"
+			lambda_invoke_arn    = module.lambda_analytics.invoke_arn
+			lambda_function_name = module.lambda_analytics.function_name
+		}
+	]
 	cors_allow_origins    = var.api_cors_allow_origins
 	tags                  = var.tags
 }

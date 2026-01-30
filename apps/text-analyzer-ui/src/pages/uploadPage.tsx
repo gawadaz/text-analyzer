@@ -12,8 +12,9 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react';
-import { UploadFile } from '../../components/uploadFile/uploadFile';
-import { uploadFileToS3 } from '../../services/uploadToS3Service';
+import { Link as RouterLink } from 'react-router-dom';
+import { UploadFile } from '../components/uploadFile/uploadFile';
+import { uploadFileToS3 } from '../services/uploadToS3Service';
 
 type UploadStatus = 'idle' | 'ready' | 'presigning' | 'uploading' | 'success' | 'error';
 
@@ -86,12 +87,19 @@ export function UploadPage() {
   return (
     <VStack spacing={6} align="stretch">
       <Box as="section">
-        <Heading as="h1" size="lg" mb={2}>
-          Analyze Your Text
-        </Heading>
-        <Text color="gray.600" fontSize="sm">
-          Upload a .txt file to analyze word frequency, unique words, and more.
-        </Text>
+        <HStack justify="space-between" align="start" spacing={4} flexWrap="wrap">
+          <Box>
+            <Heading as="h1" size="lg" mb={2}>
+              Analyze Your Text
+            </Heading>
+            <Text color="gray.600" fontSize="sm">
+              Upload a .txt file to analyze word frequency, unique words, and more.
+            </Text>
+          </Box>
+          <Button as={RouterLink} to="/history" variant="outline" colorScheme="gray">
+            View history
+          </Button>
+        </HStack>
       </Box>
 
       <Box as="section">

@@ -3,19 +3,13 @@ variable "api_name" {
 	description = "Name of the API Gateway HTTP API."
 }
 
-variable "route_key" {
-	type        = string
-	description = "Route key for the API Gateway route, e.g. 'POST /path'."
-}
-
-variable "lambda_invoke_arn" {
-	type        = string
-	description = "Invoke ARN for the Lambda integration."
-}
-
-variable "lambda_function_name" {
-	type        = string
-	description = "Lambda function name for permission binding."
+variable "routes" {
+	type = list(object({
+		route_key            = string
+		lambda_invoke_arn    = string
+		lambda_function_name = string
+	}))
+	description = "List of route definitions with Lambda integrations."
 }
 
 variable "stage_name" {
@@ -32,7 +26,7 @@ variable "cors_allow_origins" {
 variable "cors_allow_methods" {
 	type        = list(string)
 	description = "Allowed methods for CORS."
-	default     = ["POST", "OPTIONS"]
+	default     = ["GET", "POST", "OPTIONS"]
 }
 
 variable "cors_allow_headers" {
@@ -41,6 +35,7 @@ variable "cors_allow_headers" {
 	default     = [
 		"Content-Type",
 		"Authorization",
+		"X-Owner-Id",
 		"X-Amz-Date",
 		"X-Api-Key",
 		"X-Amz-Security-Token",
