@@ -33,7 +33,7 @@ resource "aws_iam_role_policy_attachment" "basic_execution" {
 data "aws_iam_policy_document" "uploads_put" {
 	statement {
 		effect  = "Allow"
-		actions = ["s3:PutObject"]
+		actions = var.uploads_bucket_actions
 		resources = ["arn:aws:s3:::${var.uploads_bucket_name}/*"]
 	}
 }

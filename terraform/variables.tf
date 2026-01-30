@@ -168,6 +168,46 @@ variable "analytics_lambda_log_retention_in_days" {
 	default     = 14
 }
 
+variable "worker_lambda_function_name" {
+	type        = string
+	description = "Name of the S3 worker Lambda function."
+	default     = "text-analyzer-worker"
+}
+
+variable "worker_lambda_handler" {
+	type        = string
+	description = "Handler for the S3 worker Lambda function."
+}
+
+variable "worker_lambda_runtime" {
+	type        = string
+	description = "Runtime for the S3 worker Lambda function."
+	default     = "nodejs20.x"
+}
+
+variable "worker_lambda_package_path" {
+	type        = string
+	description = "Path to the Lambda deployment package zip for the S3 worker."
+}
+
+variable "worker_lambda_memory_size" {
+	type        = number
+	description = "Memory size for the S3 worker Lambda function."
+	default     = 256
+}
+
+variable "worker_lambda_timeout" {
+	type        = number
+	description = "Timeout for the S3 worker Lambda function."
+	default     = 30
+}
+
+variable "worker_lambda_log_retention_in_days" {
+	type        = number
+	description = "CloudWatch log retention in days for the S3 worker Lambda function."
+	default     = 14
+}
+
 variable "api_gateway_name" {
 	type        = string
 	description = "Name of the API Gateway HTTP API."

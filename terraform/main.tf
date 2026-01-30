@@ -89,6 +89,25 @@ module "lambda_analytics" {
 	tags = var.tags
 }
 
+module "lambda_worker" {
+	source = "./modules/lambda_api"
+
+	function_name           = var.worker_lambda_function_name
+	description             = "S3 uploads worker"
+	handler                 = var.worker_lambda_handler
+	runtime                 = var.worker_lambda_runtime
+	package_path            = var.worker_lambda_package_path
+	memory_size             = var.worker_lambda_memory_size
+	timeout                 = var.worker_lambda_timeout
+	log_retention_in_days   = var.worker_lambda_log_retention_in_days
+	uploads_bucket_name     = module.s3_uploads.bucket_name
+	uploads_bucket_actions  = ["s3:GetObject"]
+	dynamodb_table_name     = module.dynamodb.table_name
+	dynamodb_table_arn       = module.dynamodb.table_arn
+	environment_variables = {}
+	tags = var.tags
+}
+
 module "apigw_http" {
 	source = "./modules/apigw_http"
 
@@ -107,6 +126,26 @@ module "apigw_http" {
 	]
 	cors_allow_origins    = var.api_cors_allow_origins
 	tags                  = var.tags
+}
+
+resource "aws_lambda_permission" "uploads_invoke_worker" {
+	statement_id  = "AllowS3InvokeWorker"
+	action        = "lambda:InvokeFunction"
+	function_name = module.lambda_worker.function_name
+	principal     = "s3.amazonaws.com"
+	source_arn    = module.s3_uploads.bucket_arn
+}
+
+resource "aws_s3_bucket_notification" "uploads_worker" {
+	bucket = module.s3_uploads.bucket_name
+
+	lambda_function {
+		lambda_function_arn = module.lambda_worker.function_arn
+		events              = ["s3:ObjectCreated:*"]
+		filter_prefix       = "uploads/"
+	}
+
+	depends_on = [aws_lambda_permission.uploads_invoke_worker]
 }
 
 data "aws_iam_policy_document" "frontend_cloudfront_read" {

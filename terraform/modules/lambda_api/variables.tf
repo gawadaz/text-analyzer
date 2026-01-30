@@ -48,6 +48,12 @@ variable "uploads_bucket_name" {
 	description = "S3 bucket name where uploads will be stored."
 }
 
+variable "uploads_bucket_actions" {
+	type        = list(string)
+	description = "S3 actions allowed on the uploads bucket for this Lambda."
+	default     = ["s3:PutObject"]
+}
+
 variable "dynamodb_table_name" {
 	type        = string
 	description = "DynamoDB table name used by the Lambda function."

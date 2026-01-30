@@ -2,6 +2,7 @@
 import {
   AttributeValue,
   DynamoDBClient,
+  GetItemCommand,
   PutItemCommand,
   QueryCommand,
   UpdateItemCommand
@@ -128,15 +129,17 @@ export const updateFileMetadataItemStatus = async (
   };
 
   if (errorMessage) {
-    setExpressions.push("errorMessage = :errorMessage");
+    setExpressions.push("#errorMessage = :errorMessage");
     expressionAttributeValues[":errorMessage"] = { S: errorMessage };
   } else {
-    removeExpressions.push("errorMessage");
+    removeExpressions.push("#errorMessage");
   }
 
   if (result) {
-    setExpressions.push("result = :result");
+    setExpressions.push("#result = :result");
     expressionAttributeValues[":result"] = toResultAttribute(result);
+  } else {
+    removeExpressions.push("#result");
   }
 
   const updateExpression = `SET ${setExpressions.join(", ")}${
@@ -152,7 +155,9 @@ export const updateFileMetadataItemStatus = async (
       },
       UpdateExpression: updateExpression,
       ExpressionAttributeNames: {
-        "#status": "status"
+        "#status": "status",
+        "#errorMessage": "errorMessage",
+        "#result": "result"
       },
       ExpressionAttributeValues: expressionAttributeValues
     })
@@ -170,17 +175,17 @@ export const updateFileMetadataItemStatus = async (
   };
 
   if (errorMessage) {
-    ownerSetExpressions.push("errorMessage = :errorMessage");
+    ownerSetExpressions.push("#errorMessage = :errorMessage");
     ownerExpressionAttributeValues[":errorMessage"] = { S: errorMessage };
   } else {
-    ownerRemoveExpressions.push("errorMessage");
+    ownerRemoveExpressions.push("#errorMessage");
   }
 
   if (result) {
-    ownerSetExpressions.push("result = :result");
+    ownerSetExpressions.push("#result = :result");
     ownerExpressionAttributeValues[":result"] = toResultAttribute(result);
   } else {
-    ownerRemoveExpressions.push("result");
+    ownerRemoveExpressions.push("#result");
   }
 
   const ownerUpdateExpression = `SET ${ownerSetExpressions.join(", ")}${
@@ -196,7 +201,9 @@ export const updateFileMetadataItemStatus = async (
       },
       UpdateExpression: ownerUpdateExpression,
       ExpressionAttributeNames: {
-        "#status": "status"
+        "#status": "status",
+        "#errorMessage": "errorMessage",
+        "#result": "result"
       },
       ExpressionAttributeValues: ownerExpressionAttributeValues
     })
@@ -303,6 +310,120 @@ export const listOwnerHistoryItems = async (ownerId: string): Promise<OwnerHisto
       return baseItem;
     })
     .filter((item): item is OwnerHistoryItem => Boolean(item));
+};
+
+export const getFileMetadataItem = async (fileId: string): Promise<OwnerHistoryItem | undefined> => {
+  const result = await ddbClient.send(
+    new GetItemCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        PK: { S: `FILE#${fileId}` },
+        SK: { S: "META" }
+      }
+    })
+  );
+
+  const item = result.Item;
+  if (!item) {
+    return undefined;
+  }
+
+  const fileIdValue = getString(item.fileId as { S?: string } | undefined);
+  const ownerIdValue = getString(item.ownerId as { S?: string } | undefined);
+  const s3Bucket = getString(item.s3Bucket as { S?: string } | undefined);
+  const s3Key = getString(item.s3Key as { S?: string } | undefined);
+  const originalFileName = getString(item.originalFileName as { S?: string } | undefined);
+  const fingerprintHash = getString(item.fingerprintHash as { S?: string } | undefined);
+  const status = getString(item.status as { S?: string } | undefined);
+  const createdAt = getNumber(item.createdAt as { N?: string } | undefined);
+  const updatedAt = getNumber(item.updatedAt as { N?: string } | undefined);
+  const errorMessage = getString(item.errorMessage as { S?: string } | undefined);
+  const resultValue = getResult(item.result as AttributeValue | undefined);
+
+  if (!fileIdValue || !ownerIdValue || !s3Bucket || !s3Key || !originalFileName || !status || !createdAt || !updatedAt) {
+    return undefined;
+  }
+
+  const baseItem: OwnerHistoryItem = {
+    fileId: fileIdValue,
+    ownerId: ownerIdValue,
+    s3Bucket,
+    s3Key,
+    originalFileName,
+    status: status as OwnerHistoryItem["status"],
+    createdAt,
+    updatedAt
+  };
+
+  if (fingerprintHash) {
+    baseItem.fingerprintHash = fingerprintHash;
+  }
+
+  if (errorMessage) {
+    baseItem.errorMessage = errorMessage;
+  }
+
+  if (resultValue) {
+    baseItem.result = resultValue;
+  }
+
+  return baseItem;
+};
+
+export const markFileProcessingInProgress = async (fileId: string, ownerId: string): Promise<boolean> => {
+  const now = Date.now();
+
+  try {
+    await ddbClient.send(
+      new UpdateItemCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: { S: `FILE#${fileId}` },
+          SK: { S: "META" }
+        },
+        UpdateExpression: "SET #status = :status, updatedAt = :updatedAt REMOVE #errorMessage, #result",
+        ConditionExpression: "#status = :pending OR #status = :failed",
+        ExpressionAttributeNames: {
+          "#status": "status",
+          "#errorMessage": "errorMessage",
+          "#result": "result"
+        },
+        ExpressionAttributeValues: {
+          ":status": { S: "IN_PROGRESS" },
+          ":updatedAt": { N: String(now) },
+          ":pending": { S: "PENDING" },
+          ":failed": { S: "FAILED" }
+        }
+      })
+    );
+  } catch (error: unknown) {
+    if ((error as { name?: string } | undefined)?.name === "ConditionalCheckFailedException") {
+      return false;
+    }
+    throw error;
+  }
+
+  await ddbClient.send(
+    new UpdateItemCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        PK: { S: `OWNER#${ownerId}` },
+        SK: { S: `FILE#${fileId}` }
+      },
+      UpdateExpression: "SET #status = :status, updatedAt = :updatedAt REMOVE #errorMessage, #result",
+      ExpressionAttributeNames: {
+        "#status": "status",
+        "#errorMessage": "errorMessage",
+        "#result": "result"
+      },
+      ExpressionAttributeValues: {
+        ":status": { S: "IN_PROGRESS" },
+        ":updatedAt": { N: String(now) }
+      }
+    })
+  );
+
+  return true;
 };
 
 
