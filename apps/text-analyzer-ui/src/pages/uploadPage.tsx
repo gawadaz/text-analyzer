@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   AlertDescription,
@@ -17,7 +17,10 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { UploadFile } from '../components/uploadFile/uploadFile';
 import { PageTabs } from '../components/pageTabs/pageTabs';
+import { RecentUploadsPanel } from '../components/recentUploadsPanel/recentUploadsPanel';
+import { fetchCurrentOwnerAnalytics } from '../services/analyticsService';
 import { uploadFileToS3 } from '../services/uploadToS3Service';
+import { AnalyticsItem } from '../types/analyticsTypes';
 
 type UploadStatus = 'idle' | 'ready' | 'presigning' | 'uploading' | 'success' | 'error';
 
@@ -27,6 +30,27 @@ export function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [lastUploadedFileName, setLastUploadedFileName] = useState<string | null>(null);
+  const [recentUploads, setRecentUploads] = useState<AnalyticsItem[]>([]);
+  const [recentUploadsLoading, setRecentUploadsLoading] = useState(false);
+  const [recentUploadsError, setRecentUploadsError] = useState('');
+
+  const loadRecentUploads = async () => {
+    setRecentUploadsLoading(true);
+    setRecentUploadsError('');
+    try {
+      const items = await fetchCurrentOwnerAnalytics();
+      const sortedItems = [...items].sort((first, second) => second.updatedAt - first.updatedAt);
+      setRecentUploads(sortedItems.slice(0, 3));
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setRecentUploadsError(error.message);
+      } else {
+        setRecentUploadsError('Failed to load recent uploads.');
+      }
+    } finally {
+      setRecentUploadsLoading(false);
+    }
+  };
 
   const onUploadFile = async (file: File) => {
     try {
@@ -40,6 +64,7 @@ export function UploadPage() {
       setUploadStatus('success');
       setUploadProgress(100);
       setLastUploadedFileName(file.name);
+      await loadRecentUploads();
       setSelectedFile(null);
     } catch (error: unknown) {
       console.error('Upload error:', error);
@@ -92,6 +117,9 @@ export function UploadPage() {
   const errorDescription = isDuplicateUpload
     ? 'This file was already uploaded. View it in history or choose a different file.'
     : errorMessage;
+  useEffect(() => {
+    void loadRecentUploads();
+  }, []);
 
   return (
     <VStack spacing={5} align="stretch">
@@ -266,6 +294,14 @@ export function UploadPage() {
             </AlertDescription>
           </Alert>
         )}
+      </Box>
+
+      <Box as="section" maxW="960px" w="full">
+        <RecentUploadsPanel
+          items={recentUploads}
+          isLoading={recentUploadsLoading}
+          errorMessage={recentUploadsError}
+        />
       </Box>
     </VStack>
   );

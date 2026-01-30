@@ -40,9 +40,6 @@ const parseArgs = (argv: string[]): GeneratorOptions => {
 	};
 };
 
-const clamp = (value: number, min: number, max: number): number =>
-	Math.min(max, Math.max(min, value));
-
 const randomInt = (min: number, max: number): number =>
 	Math.floor(Math.random() * (max - min + 1)) + min;
 
