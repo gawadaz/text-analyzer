@@ -5,15 +5,18 @@ import {
   AlertIcon,
   AlertTitle,
   Box,
+  Badge,
   Button,
   Heading,
   HStack,
   Progress,
+  SimpleGrid,
   Text,
   VStack,
 } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { UploadFile } from '../components/uploadFile/uploadFile';
+import { PageTabs } from '../components/pageTabs/pageTabs';
 import { uploadFileToS3 } from '../services/uploadToS3Service';
 
 type UploadStatus = 'idle' | 'ready' | 'presigning' | 'uploading' | 'success' | 'error';
@@ -84,25 +87,34 @@ export function UploadPage() {
       ? `Uploading... ${uploadProgress}%`
       : '';
 
+  const isDuplicateUpload = errorMessage.toLowerCase().includes('already uploaded');
+  const errorTitle = isDuplicateUpload ? 'File already uploaded' : 'Upload failed';
+  const errorDescription = isDuplicateUpload
+    ? 'This file was already uploaded. View it in history or choose a different file.'
+    : errorMessage;
+
   return (
-    <VStack spacing={6} align="stretch">
+    <VStack spacing={5} align="stretch">
       <Box as="section">
         <HStack justify="space-between" align="start" spacing={4} flexWrap="wrap">
           <Box>
-            <Heading as="h1" size="lg" mb={2}>
-              Analyze Your Text
-            </Heading>
-            <Text color="gray.600" fontSize="sm">
+            <HStack spacing={3} align="center" flexWrap="wrap" mb={2}>
+              <Heading as="h1" size="xl">
+                Analyze Your Text
+              </Heading>
+              <Badge colorScheme="blue" variant="subtle" borderRadius="full" px={3}>
+                .txt only
+              </Badge>
+            </HStack>
+            <Text color="gray.600" fontSize="md">
               Upload a .txt file to analyze word frequency, unique words, and more.
             </Text>
           </Box>
-          <Button as={RouterLink} to="/history" variant="outline" colorScheme="gray">
-            View history
-          </Button>
+          <PageTabs active="upload" />
         </HStack>
       </Box>
 
-      <Box as="section">
+      <Box as="section" maxW="960px" w="full">
         <UploadFile
           onSelect={onFileSelected}
           onSelectError={onFileSelectError}
@@ -111,39 +123,76 @@ export function UploadPage() {
       </Box>
 
       {selectedFile && (
-        <Box as="section" aria-live="polite">
-          <VStack align="start" spacing={2} mb={4}>
-            <Text fontWeight="semibold">Selected file</Text>
-            <Text fontSize="sm" color="gray.600">
-              Name: {selectedFile.name}
-            </Text>
-            <Text fontSize="sm" color="gray.600">
-              Size: {Math.ceil(selectedFile.size / 1024)} KB
-            </Text>
-            <Text fontSize="sm" color="gray.600">
-              Last modified: {new Date(selectedFile.lastModified).toLocaleString()}
-            </Text>
+        <Box
+          as="section"
+          aria-live="polite"
+          maxW="960px"
+          w="full"
+          borderWidth="1px"
+          borderRadius="lg"
+          bg="gray.50"
+          p={{ base: 4, md: 5 }}
+        >
+          <VStack align="start" spacing={4}>
+            <HStack spacing={2}>
+              <Text fontWeight="semibold" fontSize="md">
+                Selected file
+              </Text>
+              <Badge colorScheme="blue" variant="subtle" borderRadius="full" px={2}>
+                Ready
+              </Badge>
+            </HStack>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3} w="full">
+              <Box>
+                <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                  File name
+                </Text>
+                <Text fontSize="sm" fontWeight="semibold" color="gray.800">
+                  {selectedFile.name}
+                </Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                  Size
+                </Text>
+                <Text fontSize="sm" fontWeight="semibold" color="gray.800">
+                  {Math.ceil(selectedFile.size / 1024)} KB
+                </Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                  Last modified
+                </Text>
+                <Text fontSize="sm" fontWeight="semibold" color="gray.800">
+                  {new Date(selectedFile.lastModified).toLocaleString()}
+                </Text>
+              </Box>
+            </SimpleGrid>
+            <HStack spacing={3} pt={1} flexWrap="wrap">
+              <Button
+                colorScheme="blue"
+                onClick={onStartUpload}
+                isLoading={uploadStatus === 'presigning'}
+                loadingText="Preparing"
+                isDisabled={isBusy}
+              >
+                Upload file
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSelectedFile(null);
+                  setUploadStatus('idle');
+                  setUploadProgress(0);
+                  setErrorMessage('');
+                  setLastUploadedFileName(null);
+                }}
+                isDisabled={isBusy}
+              >
+                Clear selection
+              </Button>
+            </HStack>
           </VStack>
-          <HStack spacing={3}>
-            <Button
-              colorScheme="blue"
-              onClick={onStartUpload}
-              isLoading={uploadStatus === 'presigning'}
-              loadingText="Preparing"
-              isDisabled={isBusy}
-            >
-              Upload file
-            </Button>
-            <Button variant="ghost" onClick={() => {
-              setSelectedFile(null);
-              setUploadStatus('idle');
-              setUploadProgress(0);
-              setErrorMessage('');
-              setLastUploadedFileName(null);
-            }} isDisabled={isBusy}>
-              Clear selection
-            </Button>
-          </HStack>
         </Box>
       )}
 
@@ -163,11 +212,48 @@ export function UploadPage() {
 
       <Box as="section" aria-live="polite">
         {errorMessage && (
-          <Alert status="error" variant="left-accent">
-            <AlertIcon />
-            <AlertTitle>Upload failed</AlertTitle>
-            <AlertDescription>{errorMessage}</AlertDescription>
-          </Alert>
+          <Box
+            maxW="960px"
+            w="full"
+            borderWidth="1px"
+            borderRadius="lg"
+            borderColor="red.200"
+            bg="red.50"
+            p={{ base: 4, md: 5 }}
+          >
+            <Alert status="error" variant="left-accent" bg="transparent" p={0}>
+              <AlertIcon />
+              <Box>
+                <AlertTitle>{errorTitle}</AlertTitle>
+                <AlertDescription>{errorDescription}</AlertDescription>
+              </Box>
+            </Alert>
+            <HStack spacing={3} mt={4} flexWrap="wrap">
+              <Button
+                as={RouterLink}
+                to="/history"
+                size="sm"
+                variant="outline"
+                colorScheme="red"
+              >
+                View history
+              </Button>
+              <Button
+                size="sm"
+                colorScheme="red"
+                onClick={() => {
+                  setSelectedFile(null);
+                  setUploadStatus('idle');
+                  setUploadProgress(0);
+                  setErrorMessage('');
+                  setLastUploadedFileName(null);
+                }}
+                isDisabled={isBusy}
+              >
+                Choose a different file
+              </Button>
+            </HStack>
+          </Box>
         )}
         {uploadStatus === 'success' && !errorMessage && (
           <Alert status="success" variant="left-accent">

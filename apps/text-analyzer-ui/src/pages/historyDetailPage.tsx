@@ -70,7 +70,7 @@ export function HistoryDetailPage() {
             Review the full results for your uploaded file.
           </Text>
         </Box>
-        <Button as={RouterLink} to="/history" variant="outline" colorScheme="gray">
+        <Button as={RouterLink} to="/history" variant="ghost" colorScheme="gray">
           Back to history
         </Button>
       </HStack>
@@ -102,7 +102,7 @@ export function HistoryDetailPage() {
 
       {status === 'success' && selectedItem && (
         <VStack align="stretch" spacing={6}>
-          <Box borderWidth="1px" borderRadius="lg" p={6}>
+          <Box borderWidth="1px" borderRadius="lg" p={{ base: 4, md: 5 }}>
             <VStack align="start" spacing={1}>
               <Text fontSize="sm" color="gray.500">
                 File name

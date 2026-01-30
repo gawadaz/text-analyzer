@@ -1,6 +1,7 @@
 import {
   Badge,
   Box,
+  HStack,
   Link as ChakraLink,
   Table,
   TableContainer,
@@ -12,6 +13,7 @@ import {
   Tr,
   VStack,
 } from '@chakra-ui/react';
+import { AlertTriangle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { AnalyticsItem } from '../../types/analyticsTypes';
 
@@ -21,6 +23,9 @@ type Props = {
 
 const formatTimestamp = (timestamp: number): string =>
   new Date(timestamp).toLocaleString();
+
+const formatFileId = (fileId: string): string =>
+  fileId.length <= 12 ? fileId : `${fileId.slice(0, 8)}…`;
 
 const getStatusColorScheme = (status: AnalyticsItem['status']): string => {
   switch (status) {
@@ -36,6 +41,23 @@ const getStatusColorScheme = (status: AnalyticsItem['status']): string => {
   }
 };
 
+const getStatusLabel = (status: AnalyticsItem['status']): string =>
+  status.split('_').join(' ');
+
+const getStatusIcon = (status: AnalyticsItem['status']) => {
+  switch (status) {
+    case 'COMPLETED':
+      return <CheckCircle2 size={14} aria-hidden="true" />;
+    case 'FAILED':
+      return <AlertTriangle size={14} aria-hidden="true" />;
+    case 'IN_PROGRESS':
+      return <Loader2 size={14} aria-hidden="true" />;
+    case 'PENDING':
+    default:
+      return <Clock size={14} aria-hidden="true" />;
+  }
+};
+
 const getTopWordSummary = (item: AnalyticsItem): string => {
   const topWord = item.result?.top10Words?.[0];
   if (!topWord) {
@@ -46,8 +68,8 @@ const getTopWordSummary = (item: AnalyticsItem): string => {
 
 export const AnalyticsHistoryTable = ({ items }: Props) => {
   return (
-    <TableContainer borderWidth="1px" borderRadius="lg">
-      <Table variant="simple" size="sm">
+    <TableContainer borderWidth="1px" borderRadius="lg" overflow="hidden">
+      <Table variant="simple" size="md">
         <Thead bg="gray.50">
           <Tr>
             <Th>File</Th>
@@ -57,24 +79,30 @@ export const AnalyticsHistoryTable = ({ items }: Props) => {
           </Tr>
         </Thead>
         <Tbody>
-          {items.map((item) => (
-            <Tr key={item.fileId}>
-              <Td>
-                <VStack align="start" spacing={0}>
+          {items.map((item, index) => (
+            <Tr
+              key={item.fileId}
+              bg={index % 2 === 0 ? 'white' : 'gray.50'}
+              _hover={{ bg: 'blue.50' }}
+            >
+              <Td py={4}>
+                <VStack align="start" spacing={1}>
                   <ChakraLink
                     as={RouterLink}
                     to={`/history/${item.fileId}`}
                     fontWeight="semibold"
                     color="blue.600"
+                    _hover={{ textDecoration: 'underline', color: 'blue.700' }}
+                    _focusVisible={{ boxShadow: '0 0 0 3px rgba(66, 153, 225, 0.6)', borderRadius: 'md' }}
                   >
                     {item.originalFileName}
                   </ChakraLink>
                   <Text fontSize="xs" color="gray.500">
-                    ID: {item.fileId}
+                    ID: {formatFileId(item.fileId)}
                   </Text>
                 </VStack>
               </Td>
-              <Td>
+              <Td py={4}>
                 <Text fontSize="sm" color="gray.700">
                   {formatTimestamp(item.updatedAt)}
                 </Text>
@@ -82,30 +110,57 @@ export const AnalyticsHistoryTable = ({ items }: Props) => {
                   Uploaded {formatTimestamp(item.createdAt)}
                 </Text>
               </Td>
-              <Td>
-                <Badge colorScheme={getStatusColorScheme(item.status)}>
-                  {item.status.split('_').join(' ')}
-                </Badge>
+              <Td py={4}>
+                <HStack spacing={2}>
+                  <Badge
+                    colorScheme={getStatusColorScheme(item.status)}
+                    variant="solid"
+                    borderRadius="full"
+                    px={3}
+                    py={1}
+                    minW="108px"
+                    textAlign="center"
+                    display="inline-flex"
+                    justifyContent="center"
+                  >
+                    <HStack spacing={1}>
+                      {getStatusIcon(item.status)}
+                      <Text fontSize="xs" fontWeight="semibold">
+                        {getStatusLabel(item.status)}
+                      </Text>
+                    </HStack>
+                  </Badge>
+                </HStack>
               </Td>
-              <Td>
+              <Td py={4}>
                 <Box>
                   {item.status === 'COMPLETED' && item.result ? (
                     <VStack align="start" spacing={1}>
-                      <Text fontSize="sm" color="gray.700">
+                      <Text fontSize="sm" color="gray.700" noOfLines={1}>
                         Total words: {item.result.totalWords}
                       </Text>
-                      <Text fontSize="sm" color="gray.700">
+                      <Text fontSize="xs" color="gray.500" noOfLines={1}>
                         {getTopWordSummary(item)}
                       </Text>
                     </VStack>
                   ) : item.status === 'FAILED' ? (
-                    <Text fontSize="sm" color="red.600">
-                      {item.errorMessage ?? 'Analysis failed.'}
-                    </Text>
+                    <VStack align="start" spacing={1}>
+                      <Text fontSize="sm" color="red.600" fontWeight="semibold">
+                        Analysis failed
+                      </Text>
+                      <Text fontSize="xs" color="red.500" noOfLines={1}>
+                        {item.errorMessage ?? 'Please try again later.'}
+                      </Text>
+                    </VStack>
                   ) : (
-                    <Text fontSize="sm" color="gray.500">
-                      Results pending.
-                    </Text>
+                    <VStack align="start" spacing={1}>
+                      <Text fontSize="sm" color="gray.600" fontWeight="semibold">
+                        {item.status === 'IN_PROGRESS' ? 'Analyzing…' : 'Queued'}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                        Results pending.
+                      </Text>
+                    </VStack>
                   )}
                 </Box>
               </Td>

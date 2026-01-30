@@ -8,12 +8,20 @@ import {
   Button,
   Heading,
   HStack,
+  IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Select,
   Spinner,
   Text,
+  Tooltip,
   VStack,
 } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
+import { RefreshCw, Search } from 'lucide-react';
 import { AnalyticsHistoryTable } from '../components/analyticsHistoryTable/analyticsHistoryTable';
+import { PageTabs } from '../components/pageTabs/pageTabs';
 import { fetchCurrentOwnerAnalytics } from '../services/analyticsService';
 import { AnalyticsItem } from '../types/analyticsTypes';
 
@@ -26,50 +34,106 @@ export function HistoryPage() {
   const [items, setItems] = useState<AnalyticsItem[]>([]);
   const [status, setStatus] = useState<LoadStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | AnalyticsItem['status']>('ALL');
+
+  const loadHistory = async (signal: AbortSignal) => {
+    setStatus('loading');
+    setErrorMessage('');
+    try {
+      const response = await fetchCurrentOwnerAnalytics(signal);
+      setItems(response);
+      setStatus('success');
+    } catch (error: unknown) {
+      if (signal.aborted) {
+        return;
+      }
+      setStatus('error');
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Failed to load analytics history.',
+      );
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
 
-    const load = async () => {
-      setStatus('loading');
-      setErrorMessage('');
-      try {
-        const response = await fetchCurrentOwnerAnalytics(controller.signal);
-        setItems(response);
-        setStatus('success');
-      } catch (error: unknown) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        setStatus('error');
-        setErrorMessage(
-          error instanceof Error ? error.message : 'Failed to load analytics history.',
-        );
-      }
-    };
-
-    load();
+    loadHistory(controller.signal);
 
     return () => controller.abort();
   }, []);
 
   const sortedItems = useMemo(() => sortByDate(items), [items]);
+  const filteredItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return sortedItems.filter((item) => {
+      const matchesQuery =
+        query.length === 0 || item.originalFileName.toLowerCase().includes(query);
+      const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [sortedItems, searchQuery, statusFilter]);
 
   return (
-    <VStack align="stretch" spacing={6}>
+    <VStack align="stretch" spacing={8}>
       <Box as="section">
-        <HStack justify="space-between" align="start" spacing={4} flexWrap="wrap">
+        <HStack justify="space-between" align="start" spacing={6} flexWrap="wrap">
           <Box>
-            <Heading as="h1" size="lg" mb={2}>
+            <Heading as="h1" size="xl" mb={2}>
               Analysis history
             </Heading>
             <Text color="gray.600" fontSize="sm">
               Review previous analyses and open detailed results.
             </Text>
           </Box>
-          <Button as={RouterLink} to="/" variant="outline" colorScheme="gray">
-            Upload new file
-          </Button>
+          <PageTabs active="history" />
+        </HStack>
+      </Box>
+
+      <Box as="section" maxW="960px" w="full">
+        <HStack spacing={{ base: 3, md: 4 }} flexWrap="wrap" align="center">
+          <InputGroup maxW={{ base: 'full', md: '320px' }}>
+            <InputLeftElement pointerEvents="none" color="gray.400">
+              <Search size={16} />
+            </InputLeftElement>
+            <Input
+              placeholder="Search by file name"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              bg="white"
+              focusBorderColor="blue.500"
+            />
+          </InputGroup>
+          <Select
+            maxW={{ base: 'full', md: '220px' }}
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value as 'ALL' | AnalyticsItem['status'])
+            }
+            bg="white"
+            focusBorderColor="blue.500"
+          >
+            <option value="ALL">All statuses</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="IN_PROGRESS">In progress</option>
+            <option value="PENDING">Pending</option>
+            <option value="FAILED">Failed</option>
+          </Select>
+          <Tooltip label="Refresh history" placement="top">
+            <IconButton
+              aria-label="Refresh history"
+              icon={<RefreshCw size={16} />}
+              variant="outline"
+              colorScheme="gray"
+              bg="white"
+              size="md"
+              onClick={() => {
+                const controller = new AbortController();
+                loadHistory(controller.signal);
+              }}
+              isLoading={status === 'loading'}
+            />
+          </Tooltip>
         </HStack>
       </Box>
 
@@ -88,19 +152,33 @@ export function HistoryPage() {
         </Alert>
       )}
 
-      {status === 'success' && sortedItems.length === 0 && (
+      {status === 'success' && items.length === 0 && (
         <Box borderWidth="1px" borderRadius="lg" p={6} bg="gray.50">
           <Heading as="h2" size="md" mb={2}>
             No analyses yet
           </Heading>
-          <Text color="gray.600">
+          <Text color="gray.600" mb={4}>
             Upload a file to start building your analysis history.
+          </Text>
+          <Button as={RouterLink} to="/" colorScheme="blue" size="sm">
+            Upload a file
+          </Button>
+        </Box>
+      )}
+
+      {status === 'success' && items.length > 0 && filteredItems.length === 0 && (
+        <Box borderWidth="1px" borderRadius="lg" p={6} bg="gray.50">
+          <Heading as="h2" size="md" mb={2}>
+            No matches found
+          </Heading>
+          <Text color="gray.600">
+            Try a different search term or adjust the status filter.
           </Text>
         </Box>
       )}
 
-      {status === 'success' && sortedItems.length > 0 && (
-        <AnalyticsHistoryTable items={sortedItems} />
+      {status === 'success' && filteredItems.length > 0 && (
+        <AnalyticsHistoryTable items={filteredItems} />
       )}
     </VStack>
   );

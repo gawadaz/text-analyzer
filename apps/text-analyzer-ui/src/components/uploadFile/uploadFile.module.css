@@ -8,9 +8,28 @@
 .dropzone {
   border: 2px dashed #dbe2ef;
   border-radius: 16px;
-  padding: 44px 20px;
+  padding: 40px 20px 34px;
   text-align: center;
   position: relative;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dropzone:hover,
+.dropzone:focus-within {
+  border-color: #9bb6f5;
+  background: #f5f8ff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+}
+
+.dropzoneActive {
+  border-color: #2563eb;
+  background: #edf3ff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+.dropzoneDisabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .dropIcon {
@@ -27,10 +46,32 @@
 .dropTitle {
   margin: 0;
   font-weight: 600;
+  font-size: 16px;
 }
 
 .dropSubtitle {
   margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.dropButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+}
+
+.dropHelper {
+  margin: 10px 0 0;
+  font-size: 12px;
   color: #6b7280;
 }
 

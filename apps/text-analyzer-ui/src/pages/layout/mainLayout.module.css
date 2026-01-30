@@ -8,26 +8,10 @@
 .topBar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 28px;
+  gap: 16px;
+  padding: 16px 24px;
   background: #ffffff;
   border-bottom: 1px solid #e6eaf2;
-}
-
-.menuButton {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  background: transparent;
-  color: #374151;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-
-.menuButton:hover {
-  background: #f3f4f6;
 }
 
 .brand {
@@ -52,9 +36,9 @@
 }
 
 .container {
-  max-width: 1024px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 32px 28px 48px;
+  padding: 36px 32px 56px;
 }
 
 .hero {
