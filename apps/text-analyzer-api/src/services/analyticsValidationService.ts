@@ -4,6 +4,10 @@ export type ValidationResult =
   | { ok: true; ownerId: string }
   | { ok: false; response: { statusCode: number; headers: Record<string, string | number | boolean>; body: string } };
 
+export type DeleteValidationResult =
+  | { ok: true; ownerId: string; fileId: string }
+  | { ok: false; response: { statusCode: number; headers: Record<string, string | number | boolean>; body: string } };
+
 const getHeaderValue = (
   headers: Record<string, string | undefined> | null | undefined,
   name: string
@@ -93,4 +97,59 @@ export const validateAnalyticsRequest = (
   }
 
   return { ok: true, ownerId: ownerIdHeader };
+};
+
+export const validateAnalyticsDeleteRequest = (
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2,
+  requestId: string,
+  baseHeaders: Record<string, string | number | boolean>
+): DeleteValidationResult => {
+  const method = 'httpMethod' in event ? event.httpMethod : event.requestContext?.http?.method;
+
+  if (method === 'OPTIONS') {
+    return { ok: false, response: { statusCode: 204, headers: baseHeaders, body: '' } };
+  }
+
+  if (method !== 'DELETE') {
+    return {
+      ok: false,
+      response: {
+        statusCode: 405,
+        headers: baseHeaders,
+        body: JSON.stringify({
+          error: { code: 'MethodNotAllowed', message: 'Method not allowed', requestId }
+        })
+      }
+    };
+  }
+
+  const fileId = event.pathParameters?.fileId ?? undefined;
+  if (!fileId) {
+    return {
+      ok: false,
+      response: {
+        statusCode: 400,
+        headers: baseHeaders,
+        body: JSON.stringify({
+          error: { code: 'BadRequest', message: 'Missing fileId in path', requestId }
+        })
+      }
+    };
+  }
+
+  const ownerIdHeader = getHeaderValue(event.headers ?? null, 'X-Owner-Id');
+  if (!ownerIdHeader) {
+    return {
+      ok: false,
+      response: {
+        statusCode: 400,
+        headers: baseHeaders,
+        body: JSON.stringify({
+          error: { code: 'BadRequest', message: 'Missing X-Owner-Id header', requestId }
+        })
+      }
+    };
+  }
+
+  return { ok: true, ownerId: ownerIdHeader, fileId };
 };

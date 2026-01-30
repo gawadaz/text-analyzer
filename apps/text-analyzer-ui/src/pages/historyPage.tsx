@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   AlertDescription,
   AlertIcon,
   AlertTitle,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
   Box,
   Button,
   Heading,
@@ -16,13 +22,15 @@ import {
   Spinner,
   Text,
   Tooltip,
+  useDisclosure,
+  useToast,
   VStack,
 } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { RefreshCw, Search } from 'lucide-react';
 import { AnalyticsHistoryTable } from '../components/analyticsHistoryTable/analyticsHistoryTable';
 import { PageTabs } from '../components/pageTabs/pageTabs';
-import { fetchCurrentOwnerAnalytics } from '../services/analyticsService';
+import { deleteAnalytics, fetchCurrentOwnerAnalytics } from '../services/analyticsService';
 import { AnalyticsItem } from '../types/analyticsTypes';
 
 type LoadStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -36,6 +44,11 @@ export function HistoryPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | AnalyticsItem['status']>('ALL');
+  const [deletingIds, setDeletingIds] = useState<Record<string, boolean>>({});
+  const [deleteTarget, setDeleteTarget] = useState<AnalyticsItem | null>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = useRef<HTMLButtonElement | null>(null);
+  const toast = useToast();
 
   const loadHistory = async (signal: AbortSignal) => {
     setStatus('loading');
@@ -62,6 +75,54 @@ export function HistoryPage() {
 
     return () => controller.abort();
   }, []);
+
+  const handleRequestDelete = (item: AnalyticsItem) => {
+    setDeleteTarget(item);
+    onOpen();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    const fileId = deleteTarget.fileId;
+    setDeletingIds((prev) => ({ ...prev, [fileId]: true }));
+
+    try {
+      await deleteAnalytics(fileId);
+      setItems((prev) => prev.filter((item) => item.fileId !== fileId));
+      toast({
+        title: 'File deleted',
+        description: `Removed ${deleteTarget.originalFileName} from your history.`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      onClose();
+      setDeleteTarget(null);
+    } catch (error: unknown) {
+      toast({
+        title: 'Unable to delete file',
+        description:
+          error instanceof Error ? error.message : 'Failed to delete analytics history.',
+        status: 'error',
+        duration: 4000,
+        isClosable: true,
+      });
+    } finally {
+      setDeletingIds((prev) => {
+        const next = { ...prev };
+        delete next[fileId];
+        return next;
+      });
+    }
+  };
+
+  const handleCancelDelete = () => {
+    onClose();
+    setDeleteTarget(null);
+  };
 
   const sortedItems = useMemo(() => sortByDate(items), [items]);
   const filteredItems = useMemo(() => {
@@ -178,8 +239,49 @@ export function HistoryPage() {
       )}
 
       {status === 'success' && filteredItems.length > 0 && (
-        <AnalyticsHistoryTable items={filteredItems} />
+        <AnalyticsHistoryTable
+          items={filteredItems}
+          onDelete={handleRequestDelete}
+          deletingIds={deletingIds}
+        />
       )}
+
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={handleCancelDelete}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="semibold">
+              Delete file
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              {deleteTarget
+                ? `This will remove ${deleteTarget.originalFileName} from storage and history. This action cannot be undone.`
+                : 'This action cannot be undone.'}
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={handleCancelDelete} variant="ghost">
+                Cancel
+              </Button>
+              <Button
+                colorScheme="red"
+                onClick={handleConfirmDelete}
+                ml={3}
+                isLoading={
+                  deleteTarget ? Boolean(deletingIds[deleteTarget.fileId]) : false
+                }
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </VStack>
   );
 }

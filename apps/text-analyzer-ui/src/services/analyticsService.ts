@@ -44,3 +44,20 @@ export const fetchCurrentOwnerAnalytics = async (
   const ownerId = getOrCreateOwnerId();
   return fetchOwnerAnalytics(ownerId, signal);
 };
+
+export const deleteAnalytics = async (fileId: string, signal?: AbortSignal): Promise<void> => {
+  const ownerId = getOrCreateOwnerId();
+  try {
+    const response = await axiosClient.delete(`/api/v1/analytics/${fileId}`, {
+      signal,
+      headers: {
+        'X-Owner-Id': ownerId,
+      },
+    });
+    if (response.status !== 200 && response.status !== 204) {
+      throw new Error(`Failed to delete analytics history: ${response.statusText}`);
+    }
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error));
+  }
+};

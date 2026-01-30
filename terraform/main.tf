@@ -89,6 +89,25 @@ module "lambda_analytics" {
 	tags = var.tags
 }
 
+module "lambda_analytics_delete" {
+	source = "./modules/lambda_api"
+
+	function_name           = var.analytics_delete_lambda_function_name
+	description             = "Analytics delete handler"
+	handler                 = var.analytics_delete_lambda_handler
+	runtime                 = var.analytics_delete_lambda_runtime
+	package_path            = var.analytics_delete_lambda_package_path
+	memory_size             = var.analytics_delete_lambda_memory_size
+	timeout                 = var.analytics_delete_lambda_timeout
+	log_retention_in_days   = var.analytics_delete_lambda_log_retention_in_days
+	uploads_bucket_name     = module.s3_uploads.bucket_name
+	uploads_bucket_actions  = ["s3:DeleteObject"]
+	dynamodb_table_name     = module.dynamodb.table_name
+	dynamodb_table_arn       = module.dynamodb.table_arn
+	environment_variables = {}
+	tags = var.tags
+}
+
 module "lambda_worker" {
 	source = "./modules/lambda_api"
 
@@ -122,6 +141,11 @@ module "apigw_http" {
 			route_key            = "GET /api/v1/analytics/{ownerId}"
 			lambda_invoke_arn    = module.lambda_analytics.invoke_arn
 			lambda_function_name = module.lambda_analytics.function_name
+		},
+		{
+			route_key            = "DELETE /api/v1/analytics/{fileId}"
+			lambda_invoke_arn    = module.lambda_analytics_delete.invoke_arn
+			lambda_function_name = module.lambda_analytics_delete.function_name
 		}
 	]
 	cors_allow_origins    = var.api_cors_allow_origins

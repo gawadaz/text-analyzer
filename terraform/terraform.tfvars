@@ -17,6 +17,9 @@ api_lambda_package_path = "../apps/text-analyzer-api/dist/lambda.zip"
 analytics_lambda_handler      = "main.analyticsHandler"
 analytics_lambda_package_path = "../apps/text-analyzer-api/dist/lambda.zip"
 
+analytics_delete_lambda_handler      = "main.analyticsDeleteHandler"
+analytics_delete_lambda_package_path = "../apps/text-analyzer-api/dist/lambda.zip"
+
 worker_lambda_handler      = "main.workerHandler"
 worker_lambda_package_path = "../apps/text-analyzer-api/dist/lambda.zip"
 

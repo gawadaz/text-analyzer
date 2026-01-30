@@ -168,6 +168,46 @@ variable "analytics_lambda_log_retention_in_days" {
 	default     = 14
 }
 
+variable "analytics_delete_lambda_function_name" {
+	type        = string
+	description = "Name of the analytics delete Lambda function."
+	default     = "text-analyzer-analytics-delete"
+}
+
+variable "analytics_delete_lambda_handler" {
+	type        = string
+	description = "Handler for the analytics delete Lambda function."
+}
+
+variable "analytics_delete_lambda_runtime" {
+	type        = string
+	description = "Runtime for the analytics delete Lambda function."
+	default     = "nodejs20.x"
+}
+
+variable "analytics_delete_lambda_package_path" {
+	type        = string
+	description = "Path to the Lambda deployment package zip for analytics delete."
+}
+
+variable "analytics_delete_lambda_memory_size" {
+	type        = number
+	description = "Memory size for the analytics delete Lambda function."
+	default     = 256
+}
+
+variable "analytics_delete_lambda_timeout" {
+	type        = number
+	description = "Timeout for the analytics delete Lambda function."
+	default     = 10
+}
+
+variable "analytics_delete_lambda_log_retention_in_days" {
+	type        = number
+	description = "CloudWatch log retention in days for the analytics delete Lambda function."
+	default     = 14
+}
+
 variable "worker_lambda_function_name" {
 	type        = string
 	description = "Name of the S3 worker Lambda function."

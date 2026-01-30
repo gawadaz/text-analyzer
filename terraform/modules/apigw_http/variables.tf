@@ -26,7 +26,7 @@ variable "cors_allow_origins" {
 variable "cors_allow_methods" {
 	type        = list(string)
 	description = "Allowed methods for CORS."
-	default     = ["GET", "POST", "OPTIONS"]
+	default     = ["GET", "POST", "DELETE", "OPTIONS"]
 }
 
 variable "cors_allow_headers" {

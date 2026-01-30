@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 
@@ -74,4 +74,13 @@ export const getS3ObjectStream = async (bucket: string, key: string): Promise<No
   }
 
   return response.Body as NodeJS.ReadableStream;
+};
+
+export const deleteS3Object = async (bucket: string, key: string): Promise<void> => {
+  await s3Client.send(
+    new DeleteObjectCommand({
+      Bucket: bucket,
+      Key: key
+    })
+  );
 };

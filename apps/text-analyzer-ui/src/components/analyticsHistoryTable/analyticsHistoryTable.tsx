@@ -2,6 +2,7 @@ import {
   Badge,
   Box,
   HStack,
+  IconButton,
   Link as ChakraLink,
   Table,
   TableContainer,
@@ -11,14 +12,17 @@ import {
   Th,
   Thead,
   Tr,
+  Tooltip,
   VStack,
 } from '@chakra-ui/react';
-import { AlertTriangle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Loader2, Trash2 } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { AnalyticsItem } from '../../types/analyticsTypes';
 
 type Props = {
   items: AnalyticsItem[];
+  onDelete: (item: AnalyticsItem) => void;
+  deletingIds: Record<string, boolean>;
 };
 
 const formatTimestamp = (timestamp: number): string =>
@@ -66,7 +70,7 @@ const getTopWordSummary = (item: AnalyticsItem): string => {
   return `Top word: ${topWord.word} (${topWord.count})`;
 };
 
-export const AnalyticsHistoryTable = ({ items }: Props) => {
+export const AnalyticsHistoryTable = ({ items, onDelete, deletingIds }: Props) => {
   return (
     <TableContainer borderWidth="1px" borderRadius="lg" overflow="hidden">
       <Table variant="simple" size="md">
@@ -76,6 +80,7 @@ export const AnalyticsHistoryTable = ({ items }: Props) => {
             <Th>Date</Th>
             <Th>Status</Th>
             <Th>Summary</Th>
+            <Th textAlign="right">Actions</Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -163,6 +168,19 @@ export const AnalyticsHistoryTable = ({ items }: Props) => {
                     </VStack>
                   )}
                 </Box>
+              </Td>
+              <Td py={4} textAlign="right">
+                <Tooltip label="Delete file" placement="top">
+                  <IconButton
+                    aria-label={`Delete ${item.originalFileName}`}
+                    icon={<Trash2 size={16} />}
+                    variant="ghost"
+                    colorScheme="red"
+                    size="sm"
+                    onClick={() => onDelete(item)}
+                    isLoading={Boolean(deletingIds[item.fileId])}
+                  />
+                </Tooltip>
               </Td>
             </Tr>
           ))}

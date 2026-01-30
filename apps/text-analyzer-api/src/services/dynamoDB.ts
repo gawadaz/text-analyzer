@@ -2,6 +2,7 @@
 import {
   AttributeValue,
   DynamoDBClient,
+  DeleteItemCommand,
   GetItemCommand,
   PutItemCommand,
   QueryCommand,
@@ -424,6 +425,28 @@ export const markFileProcessingInProgress = async (fileId: string, ownerId: stri
   );
 
   return true;
+};
+
+export const deleteFileItems = async (fileId: string, ownerId: string): Promise<void> => {
+  await ddbClient.send(
+    new DeleteItemCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        PK: { S: `FILE#${fileId}` },
+        SK: { S: "META" }
+      }
+    })
+  );
+
+  await ddbClient.send(
+    new DeleteItemCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        PK: { S: `OWNER#${ownerId}` },
+        SK: { S: `FILE#${fileId}` }
+      }
+    })
+  );
 };
 
 
