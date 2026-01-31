@@ -24,3 +24,20 @@ Text Analyzer is an Nx monorepo with a React UI and an AWS Lambda API. Users upl
 - adding pagination to history table
 - adding websocket updates for better perfromance and UX
 
+## System Architecture
+![High Level Architecture](screenshots/highLevelArchitecture.png)
+
+## Sequence Diagram
+![Sequence Diagram](screenshots/sequenceDiagram.png)
+
+
+## Screenshots
+
+### Text-Analyzer Upload Page
+![text-analyzer main page](screenshots/uploadPage.png)
+
+### Text-Analyzer History Page
+![text-analyzer History page](screenshots/historyPage.png)
+
+### Text-Analyzer Analysis Page
+![text-analyzer Analysis page](screenshots/analysisDetails.png)
