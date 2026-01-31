@@ -19,10 +19,16 @@ type Props = {
   errorMessage?: string;
 };
 
+const isValidRecentUpload = (item: AnalyticsItem): boolean =>
+  Boolean(item.fileId) &&
+  Boolean(item.originalFileName) &&
+  Number.isFinite(item.updatedAt) &&
+  item.updatedAt > 0;
+
 const formatTimestamp = (timestamp: number): string =>
   new Date(timestamp).toLocaleString();
 
-const getStatusColorScheme = (status: AnalyticsItem['status']): string => {
+const getStatusColorScheme = (status: AnalyticsItem['status'] | undefined): string => {
   switch (status) {
     case 'COMPLETED':
       return 'green';
@@ -36,10 +42,12 @@ const getStatusColorScheme = (status: AnalyticsItem['status']): string => {
   }
 };
 
-const getStatusLabel = (status: AnalyticsItem['status']): string =>
-  status.split('_').join(' ');
+const getStatusLabel = (status: AnalyticsItem['status'] | undefined): string =>
+  (status ?? 'UNKNOWN').split('_').join(' ');
 
 export const RecentUploadsPanel = ({ items, isLoading, errorMessage }: Props) => {
+  const validItems = items.filter(isValidRecentUpload);
+
   return (
     <Box borderWidth="1px" borderRadius="lg" bg="white" p={{ base: 4, md: 5 }}>
       <HStack justify="space-between" align="start" spacing={4} mb={4} flexWrap="wrap">
@@ -67,13 +75,13 @@ export const RecentUploadsPanel = ({ items, isLoading, errorMessage }: Props) =>
         <Text fontSize="sm" color="red.600" role="alert">
           {errorMessage}
         </Text>
-      ) : items.length === 0 ? (
+      ) : validItems.length === 0 ? (
         <Text fontSize="sm" color="gray.600">
           No recent uploads yet.
         </Text>
       ) : (
         <Stack spacing={4} divider={<Divider borderColor="gray.200" />}>
-          {items.map((item) => (
+          {validItems.map((item) => (
             <HStack key={item.fileId} justify="space-between" align="start" spacing={4}>
               <VStack align="start" spacing={1} flex={1} minW={0}>
                 <ChakraLink

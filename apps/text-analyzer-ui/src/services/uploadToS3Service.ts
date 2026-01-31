@@ -2,7 +2,6 @@ import axios from 'axios';
 import axiosClient from '../axiosClient';
 import { PresignRequest, PresignResponse } from '../types/uploadTypes';
 import { createFileFingerprintHash } from '../utils/hashFingerprint';
-import { cacheFingerprint, isFingerprintCached } from './uploadFingerprintCache';
 import { getOrCreateOwnerId } from './ownerIdService';
 
 const presignFileUpload = async (
@@ -59,10 +58,6 @@ export const uploadFileToS3 = async (
   const ownerId = getOrCreateOwnerId();
   const fingerprintHash = await createFileFingerprintHash(file);
 
-  if (isFingerprintCached(ownerId, fingerprintHash)) {
-    throw new Error('You already uploaded this file.');
-  }
-
   let uploadUrl: string;
   let key: string;
   try {
@@ -79,7 +74,8 @@ export const uploadFileToS3 = async (
       error instanceof Error &&
       (error as { statusCode?: number }).statusCode === 409
     ) {
-      cacheFingerprint(ownerId, fingerprintHash);
+      console.error('File with the same fingerprint already exists. Propagating conflict error.');
+      throw error;
     }
     throw error;
   }
@@ -106,8 +102,6 @@ export const uploadFileToS3 = async (
   if (response.status < 200 || response.status >= 300) {
     throw new Error(`File upload failed: ${response.statusText}`);
   }
-
-  cacheFingerprint(ownerId, fingerprintHash);
 
   console.log(`File uploaded successfully with key: ${key}`);
 };

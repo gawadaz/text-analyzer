@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { z } from 'zod';
 import { getS3SignedUrl } from '../services/s3Service';
-import { putFileMetadataItem } from '../services/dynamoDB';
+import { putFileMetadataItem, getFileMetadataItem } from '../services/dynamoDB';
 
 const PresignRequestSchema = z.object({
   fileName: z.string().min(1),
@@ -67,6 +67,23 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
     const fileId = createHash('sha256')
       .update(`${ownerId}:${fingerprintHash}`)
       .digest('hex');
+
+    // Check if a file with this fileId already exists and return a conflict
+    const existing = await getFileMetadataItem(fileId);
+    if (existing) {
+      return {
+        statusCode: 409,
+        headers: baseHeaders,
+        body: JSON.stringify({
+          error: {
+            code: 'Conflict',
+            message: 'You already uploaded this file.',
+            requestId,
+            fileId
+          }
+        })
+      };
+    }
 
     const key = `uploads/${ownerId}/${fileId}-${fileName}`;
 
